@@ -1,0 +1,9 @@
+data/
+outputs/
+weights/
+__pycache__/
+*.pyc
+*.so
+lib/models/monodetr/ops/build/
+lib/models/monodetr/ops/dist/
+lib/models/monodetr/ops/*.egg-info/

@@ -1,0 +1,184 @@
+random_seed: 444
+
+dataset:
+  type: &dataset_type 'KITTI'
+  root_dir: 'data/KITTI/training'
+  train_txt: 'data/KITTI/ImageSets/train.txt'
+  root_dir_eval: 'data/KITTI/training'
+  eval_txt: 'data/KITTI/ImageSets/val.txt'
+  
+  train_split: 'train'
+  test_split: 'val'
+  get_img_right: True
+  get_disparity: True
+  get_disparity_on_the_fly: True
+  resolution_ori: [1280, 388]
+  resolution_ori_check_filter: False
+  batch_size: 16
+  use_3d_center: True
+  class_merging: False
+  use_dontcare: False
+  get_depth_sample_points: True
+  bbox2d_type: 'anno'
+  meanshape: False
+  writelist_train: ['Car', 'Pedestrian', 'Cyclist']
+  writelist_Eval: ['Car', 'Pedestrian', 'Cyclist']
+  crop_top: 100
+  clip_2d: False
+  ingore_3dcenter_out_of_img: True
+  ingore_far_object: True
+  drop_unkown_level: True
+
+  aug_pd: True
+  aug_crop: True
+  random_mixup3d: 0.5
+
+  random_flip: 0.5
+  random_switch: 0.0
+  random_crop: 0.5
+  scale: 0.5
+  shift: 0.1
+
+  depth_scale: 'normal'
+  decouple: False
+  stereo_shift_aug: 0
+
+  matcher_mode: "SGBM"
+  use_depth_distill: False
+
+
+model_name: 'epistereo'
+model:
+  model_type: 'stereodetr'
+  num_classes: 4
+  return_intermediate_dec: True
+  device: 'cuda'
+
+  # Backbone
+  backbone: 'resnet34'
+  train_backbone: True
+  num_feature_levels: 4
+  dilation: False
+  position_embedding: 'sine'
+  masks: False
+
+  # Depth predictor
+  mode: LID
+  num_depth_bins: 80
+  depth_min: 1e-3
+  depth_max: 60.0
+  depth_bg: 0.0
+  shrink_ratio: 1
+  align_by_3d_center: True
+  cat_left: False
+  depth_map_size_mode: 'downsample_x4'
+
+  fusion_mode: null
+  
+  # Transformer
+  decoder_type: "detr"
+  num_scale: 3
+  FPN_type: null
+  with_box_refine: True
+  with_center_refine: False
+  two_stage: False
+  use_dab: False
+  use_dn: False
+  two_stage_dino: False
+  depth_sample_mode: "offset"
+  depth_pre_type: "one_w_uncertainty"
+  init_box: False
+  enc_layers: 1
+  dec_layers: 3
+  hidden_dim: 256
+  group_num: 11
+  depth_sort_reverse: False
+  dim_feedforward: 256
+  dropout: 0.01
+  nheads: 8
+  num_queries: 50
+  enc_n_points: 4
+  dec_n_points: 4
+
+  scalar: 5
+  label_noise_scale: 0.2
+  box_noise_scale: 0.4
+  num_patterns: 0
+
+  # Innovation 1: EG-SCA
+  use_epipolar_stereo: True
+  stereo_baseline: 0.54
+
+  # Innovation 2: OA-EG
+  use_occlusion_gate: True
+  occlusion_gate_type: 'legacy'
+
+  # CADD OFF
+  use_confidence_distill: False
+
+  # Innovation 3: SGCL
+  stereo_consistency_loss_coef: 0.15
+
+  # Loss (identical to 014)
+  aux_loss: True
+
+  cls_loss_coef: 2
+  cls_loss_coef_fg: 2
+  focal_alpha: 0.25
+
+  bbox_loss_coef: 5
+  giou_loss_coef: 2
+  3dcenter_loss_coef: 10
+  sample_point_loss_coef: 10
+  dim_loss_coef: 0.1
+  angle_loss_coef: 0.1
+  depth_loss_coef: 1
+  depth_map_loss_coef: 1.2
+  disp_map_loss_coef: 1
+
+  # Matcher
+  set_cost_class: 2
+  set_cost_bbox: 5
+  set_cost_giou: 2
+  set_cost_3dcenter: 0
+  set_cost_depth: 0
+  cec_beta: 0.5
+  iou_thresh: 0.02
+
+
+
+optimizer:
+  type: 'adam'
+  lr: 0.0002
+  weight_decay: 0.0001
+
+
+lr_scheduler:
+  type: 'step'
+  warmup: False
+  decay_rate: 0.1
+  decay_list: [130, 175]
+
+
+trainer:
+  max_epoch: 250
+  gpu_ids: '0'
+  save_frequency: 1
+  save_path: 'outputs/015_oaeg/'
+  save_all: False
+  resume_model: False
+  use_dn: False
+  scalar: 5
+  label_noise_scale: 0.2
+  box_noise_scale: 0.4
+  num_patterns: 0
+  focal_alpha: 0.25
+  stereo_warmup_epochs: 5
+
+tester:
+  type: *dataset_type
+  mode: single
+  checkpoint: 250
+  threshold: 0.2
+  topk: 50
+  decoupled: False
